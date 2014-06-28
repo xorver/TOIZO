@@ -1,3 +1,9 @@
+/*
+ * Projekt z przedmiotu: TOiZO
+ * autor: Tomasz Lichoń
+ * 
+ */
+
 #include<cstdio>
 #include<cstdlib>
 #include<vector>
@@ -108,7 +114,7 @@ void wczytaj_dane(){
 //===========================================
 // Wypisywanie
 //===========================================
-
+/*
 void wypisz_roboty(){
   printf("--------------\n");
   printf("WSZYSTKIE ROBOTY\n");
@@ -151,39 +157,34 @@ void wypisz_plansze(){
       printf("%d ",plansza[x][y]);
     printf("\n");
   }
-  printf("--------------\n");
-  
+  printf("--------------\n");  
 }
+*/
 
 void wypisz_wynik(){
-  printf("--------------\n");
-  printf("WYNIK\n");
-  printf("--------------\n");
-
-  for(vector<pair<Robot*,Punkt> >::iterator it = wynik.begin();it!=wynik.end();++it){
-    int x=it->second.x;
-    int y=it->second.y;
-    printf("%d: %d %d \n",it->first->nr,x,y);
-    for(set<Punkt>::iterator it2 = it->first->punkty.begin(); it2!=it->first->punkty.end();++it2){
-      printf("  (%d, %d)",it2->x+x,it2->y+y);
-      fflush(stdout);
-    }
-    printf("\n");
-  }
-  printf("--------------\n");
-
+  printf("%ld\n",wynik.size());
+  for(vector<pair<Robot*,Punkt> >::iterator it = wynik.begin();it!=wynik.end();++it)
+    printf("%d %d %d \n",it->first->nr,it->second.x,it->second.y);
 }
 
-void mieszaj_roboty(){
+//===========================================
+// Sortowanie robotów
+//===========================================
+
+void sortuj_roboty_random(){
   random_shuffle (roboty.begin(), roboty.end());
 }
 
+bool myfunction (Robot* r1,Robot* r2) { return (r1->punkty.size() > r2->punkty.size()); }
+
+void sortuj_roboty_po_wielkosci(){
+  sort(roboty.begin(),roboty.end(),myfunction);
+}
 //===========================================
 // Rozwiazanie
 //===========================================
 
 bool roboty_koliduja(Robot* robot1, Punkt punkt1, Robot* robot2, Punkt punkt2){
-  printf("Czy koliduja %d(%d,%d) z %d(%d,%d)\n", robot1->nr, punkt1.x, punkt1.y, robot2->nr, punkt2.x, punkt2.y);
   //przyjmujemy, x_min mniejsze dla 1szego robota
   if(punkt2.x-robot2->lewo < punkt1.x-robot1->lewo){
     swap(punkt1,punkt2);
@@ -199,22 +200,17 @@ bool roboty_koliduja(Robot* robot1, Punkt punkt1, Robot* robot2, Punkt punkt2){
   int Y2_max=punkt2.y+robot2->dol;
   int X2_min=punkt2.x-robot2->lewo;
   int X2_max=punkt2.x+robot2->prawo;
-  printf("zakres %d: ([%d - %d],[%d - %d])\n", robot1->nr, X1_min, X1_max, Y1_min, Y1_max);
-  printf("zakres %d: ([%d - %d],[%d - %d])\n", robot2->nr, X2_min, X2_max, Y2_min, Y2_max);
   
   // jeśli nie mogą mieć wspólnych punktów
-  if( (X2_min > X1_max) || (Y1_min > Y2_max) || (Y2_min > Y1_max) ){
-    printf("   nie maja wspolnych punktow: NIE\n");
+  if( (X2_min > X1_max) || (Y1_min > Y2_max) || (Y2_min > Y1_max) )
     return false;
-  }
   
   //jeśli roboty układają sie w krzyz
   if((X1_max >= X2_max && Y2_min <= Y1_min && Y2_max >= Y1_max) ||
      (Y1_min >= Y2_min && Y1_max <= Y2_max && X1_min <= X2_min && X1_max >= X2_max) ||
-     (Y2_min >= Y1_min && Y2_max <= Y1_max && X2_min <= X1_min && X2_max >= X1_max)){
-    printf("   na pewno sie gdzies przecinaja: TAK\n");
+     (Y2_min >= Y1_min && Y2_max <= Y1_max && X2_min <= X1_min && X2_max >= X1_max))
     return true;
-  }
+  
   
   //minimalizacja liczby porownan (porownujemy mniejszy set z wiekszym)
   if(robot1->punkty.size() > robot2->punkty.size()){
@@ -223,13 +219,10 @@ bool roboty_koliduja(Robot* robot1, Punkt punkt1, Robot* robot2, Punkt punkt2){
   }
   for(set<Punkt>::iterator it = robot1->punkty.begin(); it!=robot1->punkty.end();++it) {
     Punkt przeskalowany(it->x + punkt1.x - punkt2.x, it->y + punkt1.y - punkt2.y);
-    if(robot2->punkty.find(przeskalowany) != robot2->punkty.end()){
-      printf("   koliduja w punkcie (%d,%d): TAK\n",it->x + punkt1.x,it->y + punkt1.y);
+    if(robot2->punkty.find(przeskalowany) != robot2->punkty.end())
       return true;
-    }
   }
   
-  printf("   nie kolidują z żadnym punkcjie: NIE\n");
   return false;
 }
 
@@ -272,64 +265,28 @@ void rozstaw_roboty(){
   } 
 }
 
-
-//===========================================
-// Testy
-//===========================================
-void assert(bool ans){
-  if(ans)
-    printf("[ok]\n");
-  else
-    printf("[error]\n");
-  fflush(stdout);
-}
-
-void test(){
-  Punkt p[10][10];
-  
-  for(int x=1;x<10;x++)
-    for(int y=0;y<10;y++)
-      p[x][y]=*(new Punkt(x,y));
-  
-  //1 z 2
-  assert(roboty_koliduja(roboty[0], p[1][1], roboty[1], p[1][1]));
-  assert(!roboty_koliduja(roboty[0], p[1][1], roboty[1], p[2][1]));
-  assert(!roboty_koliduja(roboty[0], p[1][1], roboty[1], p[3][1]));
-  assert(!roboty_koliduja(roboty[0], p[1][1], roboty[1], p[5][1]));
-  assert(roboty_koliduja(roboty[0], p[1][1], roboty[1], p[2][2]));
-  assert(roboty_koliduja(roboty[0], p[1][2], roboty[1], p[2][1]));
-  
-  //1 z 5
-  assert(roboty_koliduja(roboty[0], p[1][1], roboty[4], p[2][1]));
-  assert(roboty_koliduja(roboty[0], p[1][1], roboty[4], p[2][2]));
-  assert(roboty_koliduja(roboty[0], p[1][1], roboty[4], p[2][3]));
-  
-  //2 z 3
-  assert(!roboty_koliduja(roboty[1], p[2][1], roboty[2], p[3][2]));
-}
-
 //===========================================
 // Main
 //===========================================
 
 int main(){
   srand(unsigned(time(0)));
-  wczytaj_dane();
-  //wypisz_roboty();
-  //test();
+  wczytaj_dane(); 
   
+  sortuj_roboty_po_wielkosci();
   
   while(aktZapelnienie<s){
-    mieszaj_roboty();
     wynik.clear();
     aktZapelnienie=0;
     rozstaw_roboty();
+    for(int i=0;i<2;i++){
+      int index = rand() % (k-1);
+      swap(roboty[index],roboty[index+1]);
+    }
   }
 
   wypisz_wynik();
-  
-  //wypisz_roboty();
-  wypisz_plansze();
+  return 0;
 }
 
 
